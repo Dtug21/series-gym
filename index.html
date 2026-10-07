@@ -453,6 +453,19 @@ html,body{overflow-x:clip}
 .edbar-in .btn:not(.sec){flex:1;box-shadow:0 6px 20px rgba(14,156,143,.3)}
 .edbar-in .btn svg.i{width:20px;height:20px}
 
+/* Guía de instalación */
+.isteps{list-style:none;margin:4px 0 14px;padding:0;background:var(--surface);border:.5px solid var(--edge);border-radius:10px}
+.isteps li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;font-size:16px;line-height:1.45}
+.isteps li+li{border-top:.5px solid var(--sep)}
+.isteps .n{width:26px;height:26px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;display:grid;place-items:center;flex:0 0 auto;margin-top:1px}
+.ichip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px 2px 6px;border-radius:7px;background:var(--accent-soft);color:var(--accent);font-weight:600;white-space:nowrap;vertical-align:baseline}
+.ichip svg.i{width:17px;height:17px}
+.inote{font-size:14px;line-height:1.4;padding:11px 13px;border-radius:9px;background:var(--yellow-soft);color:var(--ink);margin-bottom:4px}
+.iarrow{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:16px;font-size:13px;font-weight:600;color:var(--accent)}
+.iarrow span{animation:bob 1.2s ease-in-out infinite}
+.iarrow svg.i{transform:rotate(-90deg);width:26px;height:26px}
+@keyframes bob{50%{transform:translateY(6px)}}
+
 /* Ajustes */
 .mets.m2{grid-template-columns:1fr 1fr;margin-top:0}
 .swr{min-height:60px}
@@ -537,6 +550,9 @@ html,body{overflow-x:clip}
   <symbol id="i-skip" viewBox="0 0 24 24"><path d="M6 5.5v13l9-6.5zM18 5.5v13"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4M7 10.5H5.5v10h13v-10H17"/></symbol>
+  <symbol id="i-addsq" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.5-6.5 4.5v-16a1 1 0 0 1 1-1z"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 8.5l3 3"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
@@ -924,6 +940,9 @@ document.addEventListener('click',ev=>{
     case 'tog':db.cfg[v]=!db.cfg[v];save();rCfg();break;
     case 'thSet':db.theme=v;save();applyTheme();rCfg();break;
     case 'exp':exportData();break;
+    case 'inst':installSheet();break;
+    case 'instOk':db.cfg.installSeen=true;save();closeSheet();break;
+    case 'copyLink':try{navigator.clipboard.writeText(location.href).then(()=>toast('Link copiado'),()=>toast(location.href,4000))}catch(e){toast(location.href,4000)}break;
     case 'imp':$('#impFile').value='';$('#impFile').click();break;
     case 'wipe':confirmSheet('¿Borrar todos tus datos?','Se eliminan tu historial, tus plantillas y tus ajustes. No se puede deshacer. Si quieres, exporta un respaldo antes.',[
       {t:'Borrar todo',c:'danger',fn:()=>{db={tpl:[],hist:[],extra:[10,15,30],act:null,cfg:clone0(CFG0),theme:'auto'};save();applyTheme();rCfg();toast('Datos borrados')}},{t:'Cancelar',c:'sec'}]);break;
@@ -1032,6 +1051,31 @@ function applyTheme(){const t=db.theme||'auto',r=document.documentElement;
 function themeSheet(){const cur=db.theme||'auto';
   openSheet(`<h2>Apariencia</h2><p>Elige cómo se ve la app.</p><div class="group">${Object.keys(THEMES).map(k=>`<button class="chk" data-a="theme" data-v="${k}" aria-pressed="${k===cur}"><i>${ic('check')}</i><span class="thi">${ic(THEMES[k][1])}</span><div class="t"><b>${THEMES[k][0]}</b><span>${THEMES[k][2]}</span></div></button>`).join('')}</div>`)}
 
+/* ---------- Instalación en la pantalla de inicio ---------- */
+const ENV=(()=>{const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  return {ios,iphone:/iPhone|iPod/.test(ua),safari:ios&&!/CriOS|FxiOS|EdgiOS|GSA|OPiOS/.test(ua),android:/Android/.test(ua),
+    mobile:ios||/Android|Mobi/.test(ua),standalone:navigator.standalone===true||matchMedia('(display-mode: standalone)').matches}})();
+function installSheet(){
+  const step=(n,html)=>`<li><span class="n">${n}</span><div>${html}</div></li>`,chip=(i,t)=>`<span class="ichip">${ic(i)}${t}</span>`;
+  let body;
+  if(ENV.standalone)body=`<p>¡Listo! Ya estás usando la app instalada. Ábrela siempre desde el ícono de tu pantalla de inicio.</p>`;
+  else if(ENV.ios&&!ENV.safari)body=`<p>En iPhone, para instalarla tienes que abrirla en <b>Safari</b>.</p><ol class="isteps">
+    ${step(1,'Copia el link de la app.')}${step(2,'Abre <b>Safari</b> y pégalo en la barra de direcciones.')}${step(3,'Ahí te aparecerán los pasos para instalarla.')}</ol>
+    <button class="btn" data-a="copyLink">Copiar link</button>`;
+  else if(ENV.ios)body=`<p>Instálala para usarla a pantalla completa, sin la barra de Safari y con acceso desde un ícono.</p><ol class="isteps">
+    ${step(1,`Toca ${chip('share','Compartir')} en la barra de Safari${ENV.iphone?', abajo al centro':', arriba a la derecha'}.`)}
+    ${step(2,`Baja en la lista y toca ${chip('addsq','Agregar a pantalla de inicio')}.`)}
+    ${step(3,'Toca <b>Agregar</b>, arriba a la derecha.')}
+    ${step(4,'Abre <b>Series</b> desde el ícono nuevo en tu pantalla de inicio.')}</ol>
+    <div class="inote"><b>Importante:</b> lo que registres aquí en Safari no pasa a la app instalada (el iPhone las guarda por separado). Instálala antes de empezar a entrenar.</div>`;
+  else if(ENV.android)body=`<p>Instálala para usarla a pantalla completa y con acceso desde un ícono.</p><ol class="isteps">
+    ${step(1,'Toca el menú <b>⋮</b> de Chrome, arriba a la derecha.')}${step(2,'Elige <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.')}${step(3,'Confirma y abre <b>Series</b> desde el ícono.')}</ol>`;
+  else body=`<p>Esta app está pensada para el celular. Abre este link en tu iPhone, con <b>Safari</b>, y te aparecerán los pasos para instalarla.</p>
+    <button class="btn" data-a="copyLink">Copiar link</button>`;
+  openSheet(`<div class="qhead"><span class="qic">${ic('phone')}</span><div><h2>Instala Series</h2><p>Toma menos de un minuto</p></div><button class="qx" data-a="instOk" aria-label="Cerrar">${ic('x')}</button></div>
+    ${body}<button class="btn ${ENV.ios&&ENV.safari&&!ENV.standalone?'sec':''}" data-a="instOk" style="margin-top:12px">${ENV.standalone?'Listo':'Entendido'}</button>
+    ${ENV.ios&&ENV.safari&&ENV.iphone&&!ENV.standalone?`<div class="iarrow">Compartir está aquí abajo<span>${ic('back')}</span></div>`:''}`)}
+
 /* ---------- Ajustes ---------- */
 const sw=(k,t,sub)=>`<button class="rowi swr" data-a="tog" data-v="${k}" role="switch" aria-checked="${!!db.cfg[k]}"><div class="t"><b>${t}</b><span>${sub}</span></div><i class="sw"></i></button>`;
 function rCfg(){const c=db.cfg,d=c.def,th=db.theme||'auto',n=db.hist.length,p=db.tpl.length;
@@ -1054,6 +1098,9 @@ function rCfg(){const c=db.cfg,d=c.def,th=db.theme||'auto',n=db.hist.length,p=db
 
   <div class="hdr">Apariencia</div>
   <div class="seg seg3">${Object.keys(THEMES).map(k=>`<button data-a="thSet" data-v="${k}" aria-pressed="${k===th}">${ic(THEMES[k][1])}${THEMES[k][0]}</button>`).join('')}</div>
+
+  <div class="hdr">App</div>
+  <div class="group"><button class="rowi" data-a="inst"><span class="rico">${ic('phone')}</span><div class="t"><b>Cómo instalarla</b><span>${ENV.standalone?'Ya está instalada en este teléfono ✓':'Agrégala a tu pantalla de inicio'}</span></div>${ic('chev','chev')}</button></div>
 
   <div class="hdr">Tus datos</div>
   <div class="group">
@@ -1083,6 +1130,8 @@ $('#impFile').addEventListener('change',e=>{const f=e.target.files&&e.target.fil
 applyTheme();
 show('home');
 if(db.act)openPlayer();
+// Primera vez en el celular sin instalar: mostrar cómo instalarla
+else if(!ENV.standalone&&ENV.mobile&&!db.cfg.installSeen)setTimeout(()=>{if($('#sheetBg').hidden&&$('#player').hidden)installSheet()},600);
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
