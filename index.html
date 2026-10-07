@@ -487,6 +487,18 @@ html,body{overflow-x:clip}
 .kgrow input{width:72px;height:46px;background:none;border:0;outline:none;color:var(--player-ink);font:600 24px var(--round);text-align:right;font-variant-numeric:tabular-nums}
 .kgrow input::placeholder{color:var(--player-muted);font-size:17px;font-weight:500}
 .kgrow span{color:var(--player-muted);font-size:15px}
+/* Pantalla final: progreso contra la última vez */
+.prog{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:4px 14px;margin:0 0 22px;text-align:left}
+.prog div{display:grid;grid-template-columns:1fr auto;grid-template-areas:"n t" "v t";column-gap:10px;padding:10px 0;align-items:center}
+.prog div+div{border-top:1px solid rgba(255,255,255,.07)}
+.prog b{grid-area:n;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog span{grid-area:v;font-size:13px;color:var(--player-muted);font-variant-numeric:tabular-nums}
+.prog em{grid-area:t;font-style:normal;font-size:13px;font-weight:700;padding:4px 9px;border-radius:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.prog em.up{color:var(--teal);background:rgba(47,211,193,.14)}
+.prog em.dn{color:var(--orange);background:rgba(255,159,69,.14)}
+.prog em.eq{color:var(--player-muted);background:rgba(255,255,255,.06)}
+.prog em.new{color:var(--gold);background:rgba(245,195,59,.14)}
+.pend .big{box-shadow:0 0 0 10px rgba(47,211,193,.12),0 0 40px rgba(47,211,193,.35)}
 /* Historial: peso por serie y nombre editable */
 .dex .sets span i{font:500 12px var(--font);font-style:normal;color:var(--muted);margin-left:5px}
 .dnamef{display:flex;align-items:center;gap:8px;border-bottom:1.5px solid var(--sep);margin:2px 0 6px;transition:border-color .2s}
@@ -699,14 +711,26 @@ function rLast(hl){const el=$('#pLast'),L=['rest','more'].includes(A.ph)?null:la
 // Peso con el que parte la serie: el último de hoy en este ejercicio, o el de la vez anterior
 function kgStart(){const today=(A.kg[A.i]||[]).filter(x=>x!=null);if(today.length)return today[today.length-1];
   const L=lastFor(ex().n),p=L&&L.e.kg?L.e.kg.filter(x=>x!=null):[];return p.length?p[Math.min(A.k,p.length-1)]:null}
+// Progreso contra la última vez (y récord de peso) para la pantalla final
+function bestKg(n){const k=norm(n);let b=null;db.hist.forEach(h=>h.ex.forEach(e=>{if(norm(e.n)===k&&e.kg)e.kg.forEach(x=>{if(x!=null&&(b==null||x>b))b=x})}));return b}
+// Las reps/tiempo se comparan por la MEJOR serie, para que hacer menos series no parezca retroceso
+function progress(ex2){return ex2.slice(0,5).map(e=>{const L=lastFor(e.n),tm=e.t==='t',tot=Math.max(...e.sets);
+  const mx=e.kg?Math.max(...e.kg.filter(x=>x!=null)):null,best=bestKg(e.n);
+  const v=(tm?'Mejor serie '+mmss(tot):`Mejor serie ${tot} reps`)+(mx!=null&&isFinite(mx)?' · '+kgTxt(mx):'');
+  if(!L)return {n:e.n,v,t:'Primera vez',c:'new'};
+  if(mx!=null&&isFinite(mx)&&best!=null&&mx>best)return {n:e.n,v,t:'🏆 Récord',c:'up'};
+  const lkg=L.e.kg?Math.max(...L.e.kg.filter(x=>x!=null)):null;
+  if(mx!=null&&lkg!=null&&isFinite(mx)&&isFinite(lkg)&&mx!==lkg)return {n:e.n,v,t:(mx>lkg?'▲ +':'▼ −')+kgTxt(Math.abs(mx-lkg)),c:mx>lkg?'up':'dn'};
+  const lt=Math.max(...L.e.sets),d=tot-lt;
+  return {n:e.n,v,t:d===0?'= igual':(d>0?'▲ +':'▼ −')+(tm?mmss(Math.abs(d)):Math.abs(d)+(Math.abs(d)===1?' rep':' reps')),c:d>0?'up':d<0?'dn':'eq'}})}
 // Arma lo que se guarda en el historial a partir de la sesión en curso
 function buildEx(a){return a.s.ex.map((e,i)=>{const sets=a.log[i].filter(v=>v!=null),kg=((a.kg||[])[i]||[]).slice(0,sets.length);
   const r={n:e.n,t:e.t,goal:e.t==='t'?e.dur:e.reps,rest:e.rest,ss:!!e.ss,sets};if(kg.some(x=>x!=null))r.kg=Array.from(kg,x=>x==null?null:x);return r}).filter(e=>e.sets.length)}
 // Los ejercicios sueltos del mismo día se juntan solos en una "Sesión libre"
 function saveRec(a,ex2){const now=Date.now();
   if(a.s.loose){const r=db.hist.find(h=>(h.loose||h.name==='Sesión libre')&&dayKey(h.d)===dayKey(now));
-    if(r){r.ex=r.ex.concat(ex2);r.end=now;r.loose=true;save();return {rec:r,merged:true}}}
-  const rec={id:uid(),d:a.t0,end:now,name:a.s.name,ex:ex2,feel:null};if(a.s.loose)rec.loose=true;
+    if(r){r.dur=(r.dur||(r.end-r.d))+(now-a.t0);r.ex=r.ex.concat(ex2);r.end=now;r.loose=true;save();return {rec:r,merged:true}}}
+  const rec={id:uid(),d:a.t0,end:now,dur:now-a.t0,name:a.s.name,ex:ex2,feel:null};if(a.s.loose)rec.loose=true;
   db.hist.unshift(rec);save();return {rec,merged:false}}
 function openPlayer(){A=db.act;A.kg=A.kg||A.s.ex.map(()=>[]);$('#player').hidden=false;$('#pRun').style.display='flex';$('#pEnd').hidden=true;document.body.classList.add('lock');wake(true);rP()}
 function closePlayer(){cancelAnimationFrame(raf);A=null;$('#player').hidden=true;document.body.classList.remove('lock');wake(false)}
@@ -768,14 +792,14 @@ function rCtlRest(){
   else $('#pctl').innerHTML=`<div class="prow">${cb('minus10','−10','Restar 10 s')}${cb('restEnd',ic('skip'),'Empezar ya','main')}</div>`;
 }
 function loop(){
-  const now=Date.now(),left=(A.end-now)/1000,ph=A.ph;
+  if(!A)return;const now=Date.now(),left=(A.end-now)/1000,ph=A.ph;
   if(ph!=='rest'&&ph!=='work')return;
   if(left<=0){return ph==='rest'?restEnd(true):workEnd(true)}
   const s=Math.ceil(left),at=db.cfg.askAt;
   if(s!==lastSec){
     if(lastSec!==null&&s<=3)sTick();
     lastSec=s;$('#sec').textContent=mmss(s);
-    if(ph==='rest'&&at>0&&s<=at&&!A.asked&&A.dur>at+5){A.asked=true;A.askOpen=true;save();sAsk();rCtlRest()}
+    if(ph==='rest'&&at>0&&s<=at&&!A.asked&&A.dur>at+5&&!(A.mute||{})[A.i]){A.asked=true;A.askOpen=true;save();sAsk();rCtlRest()}
   }
   ring(left/A.dur,ph==='work'?'#FF9F45':at>0&&s<=at?'#F5C33B':'#2FD3C1');
   raf=requestAnimationFrame(loop);
@@ -807,11 +831,13 @@ function finish(){
   const a=A,ex2=buildEx(a);
   db.act=null;
   if(!ex2.length){save();closePlayer();toast('No había series registradas');show(tab);return}
+  const prog=progress(ex2); // se calcula antes de guardar, para comparar con lo anterior
   const {rec,merged}=saveRec(a,ex2);
   const n=ex2.reduce((s,e)=>s+e.sets.length,0),min=Math.max(1,Math.round((Date.now()-a.t0)/60000));
   A=null;$('#pRun').style.display='none';$('#pTtl').textContent='';$('#pBack').style.visibility='hidden';
   const pe=$('#pEnd');pe.hidden=false;pe.dataset.id=rec.id;
   pe.innerHTML=`<div class="big">${ic('check')}</div><h2>${merged?'¡Listo!':'¡Sesión completa!'}</h2><p>${ex2.length} ejercicio${ex2.length>1?'s':''} · ${n} series · ${min} min${merged?'<br>Se sumó a tu sesión libre de hoy':''}</p>
+  ${prog.length?`<div class="prog">${prog.map(p=>`<div><b>${esc(p.n)}</b><span>${p.v}</span><em class="${p.c}">${p.t}</em></div>`).join('')}</div>`:''}
   <p style="color:var(--player-ink);font-weight:600;margin-bottom:12px">¿Quieres anotar tus sensaciones?</p>
   <div class="stack"><button class="btn" data-a="feelNow">Ahora</button><button class="btn sec" data-a="feelLater">Después</button></div>`;
 }
@@ -841,7 +867,9 @@ function rHist(){
   ${groups.length?groups.map(g=>`<div class="hdr">${new Date(g.d).toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'})}</div><div class="group">${g.items.map(histRow).join('')}</div>`).join('')
   :`<div class="empty">${sel?'No entrenaste ese día.':'Aún no hay sesiones. Cuando termines una, aparece aquí.'}</div>`}`;
 }
-function histRow(h){const n=h.ex.reduce((s,e)=>s+e.sets.length,0),min=Math.max(1,Math.round((h.end-h.d)/60000));
+// Minutos entrenados (en la sesión libre no cuenta el rato entre ejercicios)
+const durMin=h=>Math.max(1,Math.round((h.dur||(h.end-h.d))/60000));
+function histRow(h){const n=h.ex.reduce((s,e)=>s+e.sets.length,0),min=durMin(h);
   const what=h.ex.length<=2?h.ex.map(e=>esc(e.n)).join(' + '):h.ex.length+' ejercicios';
   const r=h.feel&&h.feel.r;
   return `<button class="rowi hrow" data-a="det" data-v="${h.id}"><span class="fe ${r||''}">${r?FEEL[r][1]:ic('dumb')}</span><div class="t"><b>${esc(h.name)}</b><span>${what} · ${n} series · ${min} min</span>${h.feel?'':'<em>Agregar sensaciones</em>'}</div>${ic('chev','chev')}</button>`}
@@ -850,7 +878,7 @@ const tplFrom=h=>({id:uid(),name:h.name,ex:h.ex.map(e=>({n:e.n,t:e.t,ss:!!e.ss,s
 let sheetAt=0;
 function openSheet(html){const was=$('#sheetBg').hidden;if(was)sheetAt=Date.now();$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#sheetBg').hidden=false;if(was)$('#sheet').scrollTop=0;document.body.classList.add('lock')}
 function closeSheet(){$('#sheetBg').hidden=true;$('#sheet').innerHTML='';if($('#player').hidden)document.body.classList.remove('lock')}
-function detail(id){const h=db.hist.find(x=>x.id===id);if(!h)return;const min=Math.max(1,Math.round((h.end-h.d)/60000));
+function detail(id){const h=db.hist.find(x=>x.id===id);if(!h)return;const min=durMin(h);
   openSheet(`<label class="dnamef">${ic('edit')}<input class="dname" id="dName" value="${esc(h.name)}" aria-label="Nombre de la sesión" enterkeyhint="done"></label><p>${new Date(h.d).toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'})} · ${new Date(h.d).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})} · ${min} min</p>
   <div class="card" style="padding:4px 16px">${h.ex.map((e,i)=>`<div class="dex"><b>${esc(e.n)}${e.ss||(i>0&&h.ex[i-1].ss)?' <span class="pill l">Superserie</span>':''}</b><small>Objetivo: ${e.t==='t'?mmss(e.goal):e.goal+' reps'} por serie</small><div class="sets">${e.sets.map((v,j)=>`<span class="${v<e.goal?'lo':v>e.goal?'hi':''}">${e.t==='t'?mmss(v):v}${e.kg&&e.kg[j]!=null?`<i>${kgTxt(e.kg[j])}</i>`:''}</span>`).join('')}</div></div>`).join('')}</div>
   <div class="hdr" style="margin-left:4px">Sensaciones</div>${feelForm(h)}
@@ -891,7 +919,7 @@ document.addEventListener('click',ev=>{
     case 'imp':$('#impFile').value='';$('#impFile').click();break;
     case 'wipe':confirmSheet('¿Borrar todos tus datos?','Se eliminan tu historial, tus plantillas y tus ajustes. No se puede deshacer. Si quieres, exporta un respaldo antes.',[
       {t:'Borrar todo',c:'danger',fn:()=>{db={tpl:[],hist:[],extra:[10,15,30],act:null,cfg:clone0(CFG0),theme:'auto'};save();applyTheme();rCfg();toast('Datos borrados')}},{t:'Cancelar',c:'sec'}]);break;
-    case 'addEx':{const l=ed.ex[ed.ex.length-1];ed.ex.push(Object.assign(newEx(),l?{t:l.t,sets:l.sets,reps:l.reps,dur:l.dur,rest:l.rest}:{}));rEdit();setTimeout(()=>{const ins=document.querySelectorAll('[data-in="n"]');ins[ins.length-1].scrollIntoView({behavior:'smooth',block:'center'})},50);break}
+    case 'addEx':{ed.ex.push(newEx());/* parte con los valores de Ajustes → Ejercicio nuevo */rEdit();setTimeout(()=>{const ins=document.querySelectorAll('[data-in="n"]');ins[ins.length-1].scrollIntoView({behavior:'smooth',block:'center'})},50);break}
     case 'link':ed.ex[i].ss=!ed.ex[i].ss;rEdit();break;
     case 'delEx':ed.ex.splice(i,1);rEdit();break;
     case 'saveTpl':{const s=cleanSession();if(ed.tid){const p=db.tpl.find(x=>x.id===ed.tid);if(p)Object.assign(p,s)}else{ed.tid=uid();db.tpl.push(Object.assign({id:ed.tid},s))}ed.name=s.name;save();rEdit();toast('Plantilla guardada');break}
@@ -908,8 +936,9 @@ document.addEventListener('click',ev=>{
     case 'workEnd':workEnd(false);break;
     case 'minus10':{A.end-=10000;save();if(A.end<=Date.now()){restEnd(false)}else{lastSec=null}break}
     case 'restEnd':restEnd(false);break;
-    case 'add':{const x=+v;A.end+=x*1000;A.dur+=x;A.askOpen=false;if((A.end-Date.now())/1000>10)A.asked=false;save();rCtlRest();break}
-    case 'askOk':A.askOpen=false;save();rCtlRest();break;
+    case 'add':{const x=+v;A.end+=x*1000;A.dur+=x;A.askOpen=false;if((A.end-Date.now())/1000>10)A.asked=false;(A.okc=A.okc||{})[A.i]=0;save();rCtlRest();break}
+    // Si dos veces seguidas dices "Está bien" en un ejercicio, no se vuelve a preguntar en ese ejercicio
+    case 'askOk':{A.askOpen=false;const o=A.okc=A.okc||{};o[A.i]=(o[A.i]||0)+1;if(o[A.i]>=2){(A.mute=A.mute||{})[A.i]=true;toast('No te vuelvo a preguntar en este ejercicio')}save();rCtlRest();break}
     case 'quit':if(!A){closePlayer();show('hist');break}confirmSheet('¿Salir de la sesión?','Puedes terminarla ahora y guardar lo que llevas, o seguir entrenando.',[
       {t:'Seguir entrenando'},
       {t:'Terminar y guardar',c:'sec',fn:()=>finish()},
