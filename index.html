@@ -479,6 +479,7 @@ html,body{overflow-x:clip}
 .plast span i{font:500 12px var(--font);font-style:normal;color:var(--player-muted)}
 .plast span.on{background:rgba(47,211,193,.18);color:var(--teal);box-shadow:inset 0 0 0 1px rgba(47,211,193,.55)}
 .plast span.on i{color:var(--teal)}
+.kgcap{text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--player-muted);margin-bottom:8px}
 .kgrow{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 18px}
 .kgrow button{width:48px;height:48px;border-radius:12px;background:var(--player-btn);color:var(--player-ink);font-size:24px;display:grid;place-items:center}
 .kgrow button:active{transform:scale(.92)}
@@ -685,7 +686,7 @@ function rEdit(){
   <div class="edbar"><div class="edbar-in"><button class="btn sec" data-a="saveTpl">${ic('save')}Guardar</button><button class="btn" data-a="start">${ic('play')}Empezar</button></div></div>`;
 }
 document.addEventListener('input',e=>{const t=e.target;
-  if(t.id==='kgIn'&&A){const v=parseFloat(t.value.replace(',','.'));A.kv=isFinite(v)&&v>0?v:null;save();return}
+  if(t.dataset.kw!==undefined&&A){const v=parseFloat(t.value.replace(',','.'));(A.kw=A.kw||{})[+t.dataset.kw]=isFinite(v)&&v>0?v:null;save();return}
   if(t.dataset.in==='n'&&t.dataset.s==='q'){if(qx)qx.n=t.value;return}
   if(!ed)return;
   if(t.id==='edName')ed.name=t.value;else if(t.dataset.in==='n')ed.ex[+t.dataset.i].n=t.value});
@@ -708,9 +709,13 @@ const kgTxt=v=>String(Math.round(v*10)/10).replace('.',',')+' kg';
 function rLast(hl){const el=$('#pLast'),L=['rest','more'].includes(A.ph)?null:lastFor(ex().n);
   if(!L){el.innerHTML='';return}
   el.innerHTML=`<small>La última vez · ${new Date(L.d).toLocaleDateString('es-CL',{day:'numeric',month:'short'})}</small><div>${L.e.sets.map((v,j)=>`<span class="${hl&&j===A.k?'on':''}">${L.e.t==='t'?mmss(v):v}${L.e.kg&&L.e.kg[j]!=null?`<i>${kgTxt(L.e.kg[j])}</i>`:''}</span>`).join('')}</div>`}
-// Peso con el que parte la serie: el último de hoy en este ejercicio, o el de la vez anterior
-function kgStart(){const today=(A.kg[A.i]||[]).filter(x=>x!=null);if(today.length)return today[today.length-1];
-  const L=lastFor(ex().n),p=L&&L.e.kg?L.e.kg.filter(x=>x!=null):[];return p.length?p[Math.min(A.k,p.length-1)]:null}
+// Peso "en curso" de cada ejercicio (A.kw[i]). Se ajusta en el descanso, en la serie o al anotar reps,
+// y las tres pantallas comparten el mismo valor. Si no lo has tocado: el último de hoy, o el de la vez anterior.
+function curKg(i,k){if(A.kw&&A.kw[i]!==undefined)return A.kw[i];
+  const today=(A.kg[i]||[]).filter(x=>x!=null);if(today.length)return today[today.length-1];
+  const L=lastFor(A.s.ex[i].n),p=L&&L.e.kg?L.e.kg.filter(x=>x!=null):[];return p.length?p[Math.min(k||0,p.length-1)]:null}
+const kgVal=v=>v!=null?String(v).replace('.',','):'';
+function kgRow(i,k,cap){return `${cap?`<div class="kgcap">${cap}</div>`:''}<div class="kgrow"><button data-a="kStep" data-i="${i}" data-d="-1" aria-label="Menos peso">−</button><label><input data-kw="${i}" inputmode="decimal" enterkeyhint="done" placeholder="Sin peso" value="${kgVal(curKg(i,k))}"><span>kg</span></label><button data-a="kStep" data-i="${i}" data-d="1" aria-label="Más peso">+</button></div>`}
 // Progreso contra la última vez (y récord de peso) para la pantalla final
 function bestKg(n){const k=norm(n);let b=null;db.hist.forEach(h=>h.ex.forEach(e=>{if(norm(e.n)===k&&e.kg)e.kg.forEach(x=>{if(x!=null&&(b==null||x>b))b=x})}));return b}
 // Las reps/tiempo se comparan por la MEJOR serie, para que hacer menos series no parezca retroceso
@@ -766,11 +771,11 @@ function rP(){
     $('#pSub').textContent=sup?(nx?`Luego: ${nx.n}, sin descanso`:'Último de la ronda'):done?`Hecho: ${A.log[A.i].map(v=>e.t==='t'?mmss(v):v).join(' · ')}`:'';
     ring(done/e.sets,e.t==='t'?'#FF9F45':'#2FD3C1');$('#ph').textContent='Serie '+(A.k+1);
     if(e.t==='t'){$('#sec').textContent=mmss(e.dur);$('#info').textContent='a tiempo';$('#pctl').innerHTML=`<button class="pbig o" data-a="work">${ic('play')}Iniciar serie</button>`}
-    else{$('#sec').textContent=e.reps;$('#info').textContent='reps objetivo';$('#pctl').innerHTML=`<button class="pbig" data-a="setDone">${ic('check')}Serie lista</button>`}
+    else{$('#sec').textContent=e.reps;$('#info').textContent='reps objetivo';$('#pctl').innerHTML=`${kgRow(A.i,A.k,'Peso para esta serie')}<button class="pbig" data-a="setDone">${ic('check')}Serie lista</button>`}
   }else if(ph==='reps'){
     $('#pSub').textContent='¿Cuántas reps hiciste?';
     ring(done/e.sets,'#2FD3C1');$('#ph').textContent='Serie '+(A.k+1);$('#sec').textContent=A.val;$('#info').textContent='objetivo '+e.reps;
-    $('#pctl').innerHTML=`<div class="kgrow"><button data-a="kDec" aria-label="Menos peso">−</button><label><input id="kgIn" inputmode="decimal" enterkeyhint="done" placeholder="Peso" value="${A.kv!=null?String(A.kv).replace('.',','):''}"><span>kg</span></label><button data-a="kInc" aria-label="Más peso">+</button></div>
+    $('#pctl').innerHTML=`${kgRow(A.i,A.k,'¿Con cuánto peso?')}
     <div class="prow">${cb('rDec',ic('minus'),'−1 rep')}${cb('rOk',ic('check'),'Confirmar','main')}${cb('rInc',ic('plus'),'+1 rep')}</div>`;
   }else if(ph==='work'){
     $('#pSub').textContent='';$('#ph').textContent='En curso';$('#info').textContent=`Serie ${A.k+1} de ${e.sets}`;
@@ -789,7 +794,8 @@ function rP(){
 }
 function rCtlRest(){
   if(A.askOpen)$('#pctl').innerHTML=`<div class="ask"><p>¿Te basta el descanso?</p><div class="xs">${db.extra.map(v=>`<button data-a="add" data-v="${v}">+${v} s</button>`).join('')}</div><button class="ok" data-a="askOk">Está bien</button></div>`;
-  else $('#pctl').innerHTML=`<div class="prow">${cb('minus10','−10','Restar 10 s')}${cb('restEnd',ic('skip'),'Empezar ya','main')}</div>`;
+  else{const n=A.nx,nx=n&&A.s.ex[n.i]; // el descanso es el momento de cambiar discos: peso de la próxima serie
+    $('#pctl').innerHTML=`${nx&&nx.t==='r'?kgRow(n.i,n.k,`Peso para ${n.ph==='set'?'la serie '+(n.k+1):esc(nx.n)}`):''}<div class="prow">${cb('minus10','−10','Restar 10 s')}${cb('restEnd',ic('skip'),'Empezar ya','main')}</div>`}
 }
 function loop(){
   if(!A)return;const now=Date.now(),left=(A.end-now)/1000,ph=A.ph;
@@ -823,7 +829,8 @@ function stepBack(){
   if(ph==='set'&&!hs.some(([i])=>i>=s&&i<=e))return setPh('ready',{i:s,k:0});
   if((ph==='ready'&&A.i===0)||!hs.length)return;
   const [i,k]=hs.pop(),x=A.s.ex[i],v=A.log[i][k],kv=A.kg&&A.kg[i]?A.kg[i][k]:null;A.log[i].length=k;if(A.kg&&A.kg[i])A.kg[i].length=k;A.nx=null;
-  if(x.t==='t')setPh('set',{i,k});else setPh('reps',{i,k,val:v!=null?v:x.reps,kv:kv==null?null:kv});
+  if(x.t!=='t')(A.kw=A.kw||{})[i]=kv==null?null:kv; // al reabrir la serie vuelve su peso
+  if(x.t==='t')setPh('set',{i,k});else setPh('reps',{i,k,val:v!=null?v:x.reps});
 }
 function restEnd(auto){if(auto)sEnd();advance()}
 function workEnd(auto){const e=ex(),el=Math.round(e.dur-Math.max(0,(A.end-Date.now())/1000));if(auto)sEnd();logSet(auto?e.dur:el)}
@@ -928,11 +935,12 @@ document.addEventListener('click',ev=>{
     case 'start':begin(cleanSession());break;
     // reproductor
     case 'go':setPh('set');break;
-    case 'setDone':setPh('reps',{val:ex().reps,kv:kgStart()});break;
-    case 'kInc':case 'kDec':{A.kv=Math.max(0,Math.round(((A.kv||0)+(a==='kInc'?1:-1))*10)/10);if(A.kv===0)A.kv=null;save();$('#kgIn').value=A.kv!=null?String(A.kv).replace('.',','):'';break}
+    case 'setDone':setPh('reps',{val:ex().reps});break;
+    case 'kStep':{const k=A.nx&&A.nx.i===i?A.nx.k:A.k;let w=Math.round(((curKg(i,k)||0)+(+b.dataset.d))*10)/10;if(w<=0)w=null;
+      (A.kw=A.kw||{})[i]=w;save();const inp=document.querySelector(`[data-kw="${i}"]`);if(inp)inp.value=kgVal(w);break}
     case 'rInc':A.val++;$('#sec').textContent=A.val;save();break;
     case 'rDec':A.val=Math.max(0,A.val-1);$('#sec').textContent=A.val;save();break;
-    case 'rOk':logSet(A.val,A.kv);break;
+    case 'rOk':{const w=curKg(A.i,A.k);(A.kw=A.kw||{})[A.i]=w;logSet(A.val,w);break}
     case 'work':setPh('work',{end:Date.now()+ex().dur*1000,dur:ex().dur});break;
     case 'workEnd':workEnd(false);break;
     case 'minus10':{A.end-=10000;save();if(A.end<=Date.now()){restEnd(false)}else{lastSec=null}break}
