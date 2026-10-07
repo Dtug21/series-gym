@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Series · prueba automática</title>
+<style>
+  body{margin:0;font:15px/1.45 -apple-system,"Segoe UI",system-ui,sans-serif;background:#0B1112;color:#F2F7F6;padding:16px}
+  h1{font-size:20px;margin:0 0 4px} p{margin:0 0 12px;color:#9aa}
+  #res{display:grid;gap:4px;margin-bottom:12px}
+  .ok{color:#2FD3C1} .bad{color:#FF6369;font-weight:700}
+  #sum{font-size:18px;font-weight:700;margin:8px 0 12px}
+  iframe{width:375px;height:667px;border:1px solid #333;border-radius:12px;background:#000}
+</style>
+</head>
+<body>
+<h1>Series · prueba automática</h1>
+<p>Recorre la app sola. Respalda tus datos al empezar y los deja como estaban al terminar.</p>
+<div id="sum">Corriendo…</div>
+<div id="res"></div>
+<iframe id="f" title="App en prueba"></iframe>
+<script>
+const KEY='sr1',res=document.getElementById('res'),sum=document.getElementById('sum');
+let pass=0,fail=0;
+const log=(ok,msg)=>{const d=document.createElement('div');d.className=ok?'ok':'bad';d.textContent=(ok?'✓ ':'✗ ')+msg;res.appendChild(d);ok?pass++:fail++};
+const check=(cond,msg)=>log(!!cond,msg);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+// Respaldo a prueba de interrupciones: si una corrida anterior quedó a medias, primero se restaura su respaldo
+const BK='series-test-backup';
+if(sessionStorage.getItem(BK)!==null){const b=sessionStorage.getItem(BK);if(b==='__vacio__')localStorage.removeItem(KEY);else localStorage.setItem(KEY,b)}
+const backup=localStorage.getItem(KEY);sessionStorage.setItem(BK,backup===null?'__vacio__':backup);
+
+function load(data){return new Promise(r=>{
+  if(data===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,JSON.stringify(data));
+  const f=document.getElementById('f');f.onload=()=>setTimeout(r,300);f.src='index.html?test='+Date.now()})}
+
+async function run(){
+  const f=document.getElementById('f');
+  // 1) Carga limpia
+  await load({v:2,tpl:[],hist:[],extra:[10,15,30],act:null,cfg:{installSeen:true}});
+  let w=f.contentWindow,d=f.contentDocument;const errs=[];w.addEventListener('error',e=>errs.push(e.message));
+  const S=()=>f.contentWindow.T,$=s=>d.querySelector(s),c=(a,x='')=>{const el=d.querySelector(`[data-a="${a}"]${x}`);if(!el)throw new Error('falta botón '+a+x);el.click()};
+  const type=(el,v)=>{el.value=v;el.dispatchEvent(new w.Event('input',{bubbles:true}))};
+  check(typeof w.rHome==='function'&&$('#home .hero'),'La app carga y muestra Entrenar');
+
+  // 2) Editor + superserie
+  c('new');type($('#edName'),'Prueba');type(d.querySelectorAll('[data-in="n"]')[0],'Press banca');
+  c('addEx');type(d.querySelectorAll('[data-in="n"]')[1],'Fondos');c('addEx');type(d.querySelectorAll('[data-in="n"]')[2],'Remo');
+  check(S().ed.ex[1].sets===S().db.cfg.def.sets,'"Agregar ejercicio" usa los valores de Ajustes');
+  c('link','[data-i="1"]');check(S().ed.ex[1].ss===true,'Unir en superserie');
+  S().ed.ex.forEach(e=>{e.sets=2;e.rest=60});S().ed.ex[0].rest=0;
+  c('start');check(S().A&&S().A.ph==='ready','La sesión empieza en "Estoy listo"');
+
+  // 3) Serie con un toque + peso discreto
+  c('go');check($('.kgchip'),'El peso aparece como texto discreto');
+  c('kgOpen');check($('[data-kw]'),'Al tocarlo se abre el control de peso');
+  c('kStep','[data-d="1"]');c('kStep','[data-d="1"]');check(w.curKg(0,0)===2,'+ / − cambian el peso');
+  c('quickOk');check(S().A.log[0][0]===S().A.s.ex[0].reps&&S().A.kg[0][0]===2,'"Hice N reps" registra la serie en un toque');
+  // 4) Otra cantidad + Atrás
+  c('setDone');c('rDec');c('rOk');check(S().A.log[0][1]===S().A.s.ex[0].reps-1,'"Hice otra cantidad" guarda las reps reales');
+  c('stepBack');check(S().A.ph==='reps'&&w.curKg(0,1)===2,'Atrás reabre la serie con su peso');c('rOk');
+  // 5) Superserie: Fondos → Remo sin descanso → descanso → ronda 2
+  check(S().A.ph==='ready'&&$('#pName').textContent.includes('+'),'Pantalla de inicio de la superserie');
+  c('go');c('quickOk');check(S().A.ph==='set'&&S().A.s.ex[S().A.i].n==='Remo','Superserie: pasa al siguiente sin descanso');
+  c('quickOk');check(S().A.ph==='rest','Descanso al final de la ronda');
+  // 6) Descanso: −10, ¿te basta?, +15, empezar ya
+  const end0=S().A.end;c('minus10');check(Math.round((end0-S().A.end)/1000)===10,'−10 resta 10 segundos');
+  S().A.end=Date.now()+8000;S().A.asked=false;w.loop();check($('.ask'),'"¿Te basta?" aparece cerca del final');
+  c('add','[data-v="15"]');check(!$('.ask')&&(S().A.end-Date.now())/1000>20,'+15 alarga el descanso');
+  c('restEnd');check(S().A.ph==='set'&&S().A.k===1,'"Empezar ya" pasa a la ronda 2');
+  c('quickOk');c('quickOk');check(S().A.ph==='more','Al terminar todo: "¿Algo más?"');
+  // 7) Agregar sobre la marcha + cierre con progreso
+  c('qAdd');type($('#sheet [data-in="n"]'),'Plancha');S().qx.t='t';S().qx.sets=1;S().qx.dur=5;c('qGo');
+  c('go');c('work');c('workEnd');c('endS');
+  check($('#pEnd h2')&&$('.prog'),'Pantalla final con progreso');
+  const h=S().db.hist[0];check(h&&h.ex.length===4&&typeof h.dur==='number'&&h.ex[0].kg,'Sesión guardada con peso y duración');
+  c('feelNow');c('fchip','[data-v="j"]');c('feelEnd');check(S().db.hist[0].feel&&S().db.hist[0].feel.r==='j','Sensaciones guardadas');
+
+  // 8) Ejercicios sueltos del día se juntan
+  w.show('home');for(const n of ['Sentadilla','Zancadas']){c('loose');type($('#sheet [data-in="n"]'),n);S().qx.sets=1;S().qx.rest=0;c('qGo');c('go');c('quickOk');c('endS');c('feelLater')}
+  const libres=S().db.hist.filter(x=>x.loose);check(libres.length===1&&libres[0].ex.length===2,'Los ejercicios sueltos del día se juntan solos');
+  // 9) La última vez
+  w.startSession({name:'X',ex:[{n:'Press banca',t:'r',sets:1,reps:8,dur:30,rest:0}]});await wait(50);
+  check($('#pLast').textContent.includes('La última vez'),'"La última vez" aparece en un ejercicio repetido');
+  S().db.act=null;S().save();w.closePlayer();
+  // 10) Eliminar con Deshacer
+  const n0=S().db.hist.length;w.show('hist');c('det');c('delSess');check(S().db.hist.length===n0-1&&$('#snack').classList.contains('on'),'Eliminar sesión muestra "Deshacer"');
+  c('snack');check(S().db.hist.length===n0,'"Deshacer" recupera la sesión');
+  // 11) Mantener presionado hace correr el valor
+  w.show('cfg');const s0=S().db.cfg.def.rest,bt=$('[data-a="dInc"][data-f="rest"]');
+  bt.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true}));await wait(900);d.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true}));
+  check(S().db.cfg.def.rest>=s0+15*3,'Mantener presionado + hace correr el valor');
+  // 12) Apariencia
+  c('thSet','[data-v="dark"]');check(d.documentElement.dataset.theme==='dark','Tema oscuro forzado');c('thSet','[data-v="auto"]');
+  check(errs.length===0,'Sin errores de JavaScript'+(errs.length?': '+errs.join(' | '):''));
+
+  // 13) Migración de datos viejos (sin versión ni duración)
+  await load({tpl:[],hist:[{id:'a',d:1,end:60001,name:'Vieja',ex:[{n:'Curl',t:'r',goal:10,rest:60,sets:[10]}]}],extra:[10,15,30],act:null});
+  w=f.contentWindow;const S2=()=>w.T;check(S2().db.v===2&&S2().db.hist[0].dur===60000,'Datos viejos se convierten al formato nuevo');
+  // 14) Pantalla baja (iPhone SE): el reproductor cabe sin desplazar
+  d=f.contentDocument;{const st=d.createElement('style');st.textContent='*{animation:none!important;transition:none!important}';d.head.appendChild(st)}w.startSession({name:'SE',ex:[{n:'Press banca',t:'r',sets:3,reps:8,dur:30,rest:60}]});await wait(80);
+  d.querySelector('[data-a="go"]').click();await wait(450);const p=d.querySelector('#player');
+  check(p.scrollHeight<=p.clientHeight+2,`En 375×667 la serie cabe sin desplazar (${p.scrollHeight}/${p.clientHeight})`);
+  d.querySelector('[data-a="quickOk"]').click();await wait(450);
+  check(p.scrollHeight<=p.clientHeight+2,`En 375×667 el descanso cabe sin desplazar (${p.scrollHeight}/${p.clientHeight})`);
+}
+
+run().catch(e=>log(false,'La prueba se detuvo: '+e.message)).finally(()=>{
+  if(backup===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,backup);sessionStorage.removeItem(BK);
+  sum.textContent=fail?`✗ ${fail} fallaron · ${pass} pasaron`:`✓ Todo bien · ${pass} pruebas pasaron`;sum.className=fail?'bad':'ok';
+  document.title=(fail?'✗ ':'✓ ')+'Series · prueba';
+});
+</script>
+</body>
+</html>
