@@ -600,7 +600,7 @@ const newEx=()=>Object.assign({n:'',t:'r'},db.cfg.def);
 const FEEL={l:['Liviana','😌'],j:['Justa','💪'],d:['Dura','🥵']};
 const dayKey=d=>{d=new Date(d);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 const goalTxt=e=>e.t==='t'?mmss(e.dur):e.reps+' reps';
-let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1900)}
+let tt;function toast(m,ms){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),ms||1900)}
 
 /* ---------- Audio y pantalla encendida ---------- */
 let ac=null;
@@ -794,7 +794,8 @@ function rCtlRest(){
 function loop(){
   if(!A)return;const now=Date.now(),left=(A.end-now)/1000,ph=A.ph;
   if(ph!=='rest'&&ph!=='work')return;
-  if(left<=0){return ph==='rest'?restEnd(true):workEnd(true)}
+  if(left<=0){if(left<-3)toast(`${ph==='rest'?'El descanso':'La serie'} terminó hace ${mmss(-left)}`,4500); // volviste a la app después de que terminó
+    return ph==='rest'?restEnd(true):workEnd(true)}
   const s=Math.ceil(left),at=db.cfg.askAt;
   if(s!==lastSec){
     if(lastSec!==null&&s<=3)sTick();
