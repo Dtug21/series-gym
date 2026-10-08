@@ -1,6 +1,6 @@
 // Guarda la app para que abra sin internet. Sube VERSION cuando cambies archivos.
-const VERSION = 'series-v11';
-const FILES = ['./', './index.html', './css/app.css?v=11', './js/app.js?v=11', './manifest.webmanifest','./icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
+const VERSION = 'series-v12';
+const FILES = ['./', './index.html', './css/app.css?v=12', './js/app.js?v=12', './manifest.webmanifest','./icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))));

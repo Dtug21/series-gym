@@ -585,3 +585,17 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){
 
 // Acceso para test.html (la prueba automática); no cambia nada en la app
 window.T={get A(){return A},get db(){return db},get ed(){return ed},get qx(){return qx},save:()=>save()};
+
+/* ---------- iPhone instalada: el teclado puede dejar la pantalla 59 px más baja ----------
+   Al cerrar el teclado, si la altura no volvió a la máxima vista, se oculta y se vuelve a mostrar
+   un elemento de pantalla completa (#vh) para que el iPhone vuelva a medir. */
+let maxH=window.innerHeight;
+addEventListener('resize',()=>{maxH=Math.max(maxH,window.innerHeight)});
+function healVh(){const a=document.activeElement;if(a&&/INPUT|TEXTAREA/.test(a.tagName))return;
+  if(maxH-window.innerHeight<=4)return;const v=$('#vh');if(!v)return;
+  const y=window.scrollY,p=$('#player'),py=p?p.scrollTop:0;
+  v.style.display='none';void v.offsetHeight;v.style.display='';
+  document.body.style.display='none';void document.body.offsetHeight;document.body.style.display='';
+  window.scrollTo(0,y);if(p)p.scrollTop=py}
+document.addEventListener('focusout',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))setTimeout(healVh,140)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(healVh,300)});

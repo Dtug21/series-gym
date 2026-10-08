@@ -52,7 +52,8 @@
 /* El fondo (brillo turquesa arriba + grilla de puntos + grano) va en <html>: en el iPhone es la capa que
    cubre TODA la pantalla, incluida la zona de la hora, la barra de inicio y el rebote al desplazar.
    (Antes estaba en una capa fija sobre el body y podía dejar franjas lisas arriba o abajo.) */
-html{min-height:100%;background-color:var(--bg);
+html{min-height:calc(100% + env(safe-area-inset-top,0px));background-color:var(--bg); /* iPhone instalada: sin esto queda una franja abajo del alto de la zona de la hora */
+  
   background-image:radial-gradient(140% 420px at 50% -60px,var(--glow),transparent 70%),radial-gradient(var(--dot) 1px,transparent 1.3px),var(--grain);
   background-size:100% 100%,18px 18px,160px 160px;background-repeat:no-repeat,repeat,repeat;
   -webkit-text-size-adjust:100%;touch-action:manipulation;font-size:17px}
@@ -66,6 +67,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:var(--r-m)}
 input,textarea{font:inherit;color:inherit;-webkit-user-select:text;user-select:text}
 svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.vh{position:fixed;inset:0;visibility:hidden;pointer-events:none;z-index:-2}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .app{max-width:640px;margin:0 auto}
 .stack>*+*{margin-top:12px}
