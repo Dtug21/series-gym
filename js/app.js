@@ -113,6 +113,7 @@ function rEdit(){
   <div class="edbar"><div class="edbar-in"><button class="btn sec" data-a="saveTpl">${ic('save')}Guardar</button><button class="btn" data-a="start">${ic('play')}Empezar</button></div></div>`;
 }
 document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='feelTxt'){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,220)+'px'}
   if(t.dataset.kw!==undefined&&A){const v=parseFloat(t.value.replace(',','.'));(A.kw=A.kw||{})[+t.dataset.kw]=isFinite(v)&&v>0?v:null;save();return}
   if(t.dataset.in==='n'&&t.dataset.s==='q'){if(qx)qx.n=t.value;return}
   if(!ed)return;
@@ -131,7 +132,7 @@ let A=null,raf=0,lastSec=null;
 const ex=()=>A.s.ex[A.i];
 function startSession(s){db.act={s,i:0,k:0,ph:'ready',log:s.ex.map(()=>[]),kg:s.ex.map(()=>[]),t0:Date.now()};save();openPlayer()}
 // Lo último que hiciste en este ejercicio (de las sesiones guardadas)
-function lastFor(n){const k=norm(n);for(const h of db.hist){const e=h.ex.find(x=>norm(x.n)===k);if(e)return {d:h.d,e}}return null}
+function lastFor(n,before=Infinity){const k=norm(n);for(const h of db.hist){if(h.d>=before)continue;const e=h.ex.find(x=>norm(x.n)===k);if(e)return {d:h.d,e}}return null}
 const kgTxt=v=>String(Math.round(v*10)/10).replace('.',',')+' kg';
 function rLast(hl){const el=$('#pLast'),L=['rest','more'].includes(A.ph)?null:lastFor(ex().n);
   if(!L){el.innerHTML='';return}
@@ -147,17 +148,19 @@ function kgChip(i,k,lbl){const v=curKg(i,k);
   return `<div class="kgline"><button class="kgchip${v==null?' add':''}" data-a="kgOpen" aria-label="${v==null?'Agregar peso':'Cambiar peso: '+kgTxt(v)}">${ic('dumb')}${v==null?'Agregar peso':`${lbl} <b>${kgTxt(v)}</b>`}${ic('edit')}</button></div>`}
 function kgRow(i,k,cap){return `${cap?`<div class="kgcap">${cap}</div>`:''}<div class="kgrow"><button data-a="kStep" data-i="${i}" data-d="-1" aria-label="Menos peso">−</button><label><input data-kw="${i}" inputmode="decimal" enterkeyhint="done" placeholder="Sin peso" value="${kgVal(curKg(i,k))}"><span>kg</span></label><button data-a="kStep" data-i="${i}" data-d="1" aria-label="Más peso">+</button></div>`}
 // Progreso contra la última vez (y récord de peso) para la pantalla final
-function bestKg(n){const k=norm(n);let b=null;db.hist.forEach(h=>h.ex.forEach(e=>{if(norm(e.n)===k&&e.kg)e.kg.forEach(x=>{if(x!=null&&(b==null||x>b))b=x})}));return b}
+function bestKg(n,before=Infinity){const k=norm(n);let b=null;db.hist.forEach(h=>h.d<before&&h.ex.forEach(e=>{if(norm(e.n)===k&&e.kg)e.kg.forEach(x=>{if(x!=null&&(b==null||x>b))b=x})}));return b}
 // Las reps/tiempo se comparan por la MEJOR serie, para que hacer menos series no parezca retroceso
-function progress(ex2){return ex2.slice(0,5).map(e=>{const L=lastFor(e.n),tm=e.t==='t',tot=Math.max(...e.sets);
-  const mx=e.kg?Math.max(...e.kg.filter(x=>x!=null)):null,best=bestKg(e.n);
+function progress(ex2){return ex2.slice(0,5).map(e=>Object.assign({n:e.n},cmpEx(e,lastFor(e.n),bestKg(e.n))))}
+// Compara un ejercicio con la vez anterior (L) y con el mejor peso previo (best)
+function cmpEx(e,L,best){const tm=e.t==='t',tot=Math.max(...e.sets);
+  const mx=e.kg?Math.max(...e.kg.filter(x=>x!=null)):null;
   const v=(tm?'Mejor serie '+mmss(tot):`Mejor serie ${tot} reps`)+(mx!=null&&isFinite(mx)?' · '+kgTxt(mx):'');
-  if(!L)return {n:e.n,v,t:'Primera vez',c:'new'};
-  if(mx!=null&&isFinite(mx)&&best!=null&&mx>best)return {n:e.n,v,t:'🏆 Récord',c:'up'};
+  if(!L)return {v,t:'Primera vez',c:'new'};
+  if(mx!=null&&isFinite(mx)&&best!=null&&mx>best)return {v,t:'🏆 Récord',c:'up',L};
   const lkg=L.e.kg?Math.max(...L.e.kg.filter(x=>x!=null)):null;
-  if(mx!=null&&lkg!=null&&isFinite(mx)&&isFinite(lkg)&&mx!==lkg)return {n:e.n,v,t:(mx>lkg?'▲ +':'▼ −')+kgTxt(Math.abs(mx-lkg)),c:mx>lkg?'up':'dn'};
+  if(mx!=null&&lkg!=null&&isFinite(mx)&&isFinite(lkg)&&mx!==lkg)return {v,t:(mx>lkg?'▲ +':'▼ −')+kgTxt(Math.abs(mx-lkg)),c:mx>lkg?'up':'dn',L};
   const lt=Math.max(...L.e.sets),d=tot-lt;
-  return {n:e.n,v,t:d===0?'= igual':(d>0?'▲ +':'▼ −')+(tm?mmss(Math.abs(d)):Math.abs(d)+(Math.abs(d)===1?' rep':' reps')),c:d>0?'up':d<0?'dn':'eq'}})}
+  return {v,t:d===0?'= igual':(d>0?'▲ +':'▼ −')+(tm?mmss(Math.abs(d)):Math.abs(d)+(Math.abs(d)===1?' rep':' reps')),c:d>0?'up':d<0?'dn':'eq',L}}
 // Arma lo que se guarda en el historial a partir de la sesión en curso
 function buildEx(a){return a.s.ex.map((e,i)=>{const sets=a.log[i].filter(v=>v!=null),kg=((a.kg||[])[i]||[]).slice(0,sets.length);
   const r={n:e.n,t:e.t,goal:e.t==='t'?e.dur:e.reps,rest:e.rest,ss:!!e.ss,sets};if(kg.some(x=>x!=null))r.kg=Array.from(kg,x=>x==null?null:x);return r}).filter(e=>e.sets.length)}
@@ -327,11 +330,34 @@ const tplFrom=h=>({id:uid(),name:h.name,ex:h.ex.map(e=>({n:e.n,t:e.t,ss:!!e.ss,s
 let sheetAt=0;
 function openSheet(html){const was=$('#sheetBg').hidden;if(was)sheetAt=Date.now();$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#sheetBg').hidden=false;if(was)$('#sheet').scrollTop=0;document.body.classList.add('lock')}
 function closeSheet(){$('#sheetBg').hidden=true;$('#sheet').innerHTML='';if($('#player').hidden)document.body.classList.remove('lock')}
-function detail(id){const h=db.hist.find(x=>x.id===id);if(!h)return;const min=durMin(h);
-  openSheet(`<label class="dnamef">${ic('edit')}<input class="dname" id="dName" value="${esc(h.name)}" aria-label="Nombre de la sesión" enterkeyhint="done"></label><p>${new Date(h.d).toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'})} · ${new Date(h.d).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})} · ${min} min</p>
-  <div class="card" style="padding:4px 16px">${h.ex.map((e,i)=>`<div class="dex"><b>${esc(e.n)}${e.ss||(i>0&&h.ex[i-1].ss)?' <span class="pill l">Superserie</span>':''}</b><small>Objetivo: ${e.t==='t'?mmss(e.goal):e.goal+' reps'} por serie</small><div class="sets">${e.sets.map((v,j)=>`<span class="${v<e.goal?'lo':v>e.goal?'hi':''}">${e.t==='t'?mmss(v):v}${e.kg&&e.kg[j]!=null?`<i>${kgTxt(e.kg[j])}</i>`:''}</span>`).join('')}</div></div>`).join('')}</div>
+// Detalle de una sesión: resumen, cada ejercicio con su progreso, sensaciones y acciones
+const nf=v=>Math.round(v).toLocaleString('es-CL');
+const shortD=d=>new Date(d).toLocaleDateString('es-CL',{day:'numeric',month:'short'}).replace('.','');
+function exInfo(e,before){const tm=e.t==='t',reps=tm?0:e.sets.reduce((s,v)=>s+v,0),secs=tm?e.sets.reduce((s,v)=>s+v,0):0;
+  const vol=(e.kg||[]).reduce((s,k,j)=>s+(k!=null?k*e.sets[j]:0),0),ok=e.sets.filter(v=>v>=e.goal).length;
+  let bj=0;e.sets.forEach((v,j)=>{const kb=e.kg?e.kg[bj]||0:0,kj=e.kg?e.kg[j]||0:0;if(kj>kb||(kj===kb&&v>e.sets[bj]))bj=j});
+  const best=tm?mmss(e.sets[bj]):e.sets[bj]+(e.kg&&e.kg[bj]!=null?' × '+kgTxt(e.kg[bj]):' reps');
+  return {tm,reps,secs,vol,ok,best,cmp:cmpEx(e,lastFor(e.n,before),bestKg(e.n,before))}}
+function detail(id){const h=db.hist.find(x=>x.id===id);if(!h)return;
+  const info=h.ex.map(e=>exInfo(e,h.d)),series=h.ex.reduce((s,e)=>s+e.sets.length,0),reps=info.reduce((s,x)=>s+x.reps,0),vol=info.reduce((s,x)=>s+x.vol,0);
+  let fd=new Date(h.d).toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'short'}).replace(',','').replace('.','');fd=fd[0].toUpperCase()+fd.slice(1);
+  const hr=new Date(h.d).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const stat=(n,l)=>`<div><b>${n}</b><small>${l}</small></div>`;
+  const exHtml=(e,i)=>{const x=info[i],c=x.cmp;
+    return `<div class="dex"><div class="dexh"><b>${esc(e.n)}</b><em class="cmp ${c.c}">${c.t}${c.L&&c.c!=='new'?` <small>vs ${shortD(c.L.d)}</small>`:''}</em></div>
+    <div class="sets">${e.sets.map((v,j)=>`<span class="${v<e.goal?'lo':v>e.goal?'hi':''}">${x.tm?mmss(v):v}${e.kg&&e.kg[j]!=null?`<i>${kgTxt(e.kg[j])}</i>`:''}</span>`).join('')}</div>
+    <div class="dexf">Objetivo ${x.tm?mmss(e.goal):e.goal+' reps'} · <b>${x.ok} de ${e.sets.length}</b> completas · Mejor ${x.best}${x.tm?' · '+mmss(x.secs)+' en total':x.vol?' · '+nf(x.vol)+' kg':''}</div></div>`};
+  // Agrupa las superseries en un bloque con la barra turquesa
+  let body='',i=0;while(i<h.ex.length){if(h.ex[i].ss){let j=i;let g='';while(j<h.ex.length){g+=exHtml(h.ex[j],j);if(!h.ex[j].ss){j++;break}j++}body+=`<div class="ssg"><span class="ssl">${ic('link')}Superserie</span>${g}</div>`;i=j}else{body+=exHtml(h.ex[i],i);i++}}
+  const colors=h.ex.some(e=>e.sets.some(v=>v!==e.goal));
+  openSheet(`<label class="dnamef">${ic('edit')}<input class="dname" id="dName" value="${esc(h.name)}" aria-label="Nombre de la sesión" enterkeyhint="done"></label>
+  <p class="dmeta">${fd} · ${hr} · ${durMin(h)} min</p>
+  <div class="dsum">${stat(h.ex.length,'ejercicio'+(h.ex.length>1?'s':''))}${stat(series,'series')}${reps?stat(nf(reps),'reps'):''}${vol?stat(nf(vol),'kg levantados'):stat(durMin(h),'min')}</div>
+  <div class="card dcard">${body}</div>
+  ${colors?'<p class="dlegend"><i class="lo"></i>bajo el objetivo<i class="hi"></i>sobre el objetivo</p>':''}
   <div class="hdr" style="margin-left:4px">Sensaciones</div>${feelForm(h)}
-  <div class="stack" style="margin-top:14px"><button class="btn" data-a="feelSave" data-v="${h.id}">Guardar cambios</button><button class="btn sec" data-a="repeat" data-v="${h.id}">Repetir esta sesión</button><button class="btn sec" data-a="toTpl" data-v="${h.id}">Guardar como plantilla</button><button class="btn plain" data-a="delSess" data-v="${h.id}" style="color:var(--red)">Eliminar sesión</button></div>`)}
+  <button class="btn" data-a="feelSave" data-v="${h.id}" style="margin-top:14px">Guardar cambios</button>
+  <div class="acts"><button data-a="repeat" data-v="${h.id}">${ic('play')}Repetir</button><button data-a="toTpl" data-v="${h.id}">${ic('save')}Plantilla</button><button class="del" data-a="delSess" data-v="${h.id}">${ic('trash')}Eliminar</button></div>`)}
 function confirmSheet(title,msg,btns){openSheet(`<h2>${title}</h2><p>${msg}</p><div class="stack">${btns.map((b,i)=>`<button class="btn ${b.c||''}" data-a="cf" data-i="${i}">${b.t}</button>`).join('')}</div>`);confirmSheet.fns=btns.map(b=>b.fn)}
 
 /* ---------- Toques ---------- */
