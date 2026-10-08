@@ -57,6 +57,9 @@ html{-webkit-text-size-adjust:100%;touch-action:manipulation;font-size:17px;over
   background-color:var(--bg);background-image:radial-gradient(140% 420px at 50% -60px,var(--glow),transparent 70%),radial-gradient(var(--dot) 1px,transparent 1.3px),var(--grain);
   background-size:100% 520px,18px 18px,160px 160px;background-repeat:no-repeat,repeat,repeat}
 body{margin:0;color:var(--ink);font:17px/1.4 var(--font);letter-spacing:-.01em;padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;background:transparent}
+/* Toda pantalla queda apenas más alta que el iPhone, como Ajustes: iOS instalada acorta el área
+   de las páginas que no se deslizan y deja una franja negra abajo (Entrenar e Historial). */
+body{min-height:calc(100vh + env(safe-area-inset-top,0px) + 1px);min-height:calc(100lvh + env(safe-area-inset-top,0px) + 1px)}
 body.lock{overflow:hidden}
 [hidden]{display:none!important}
 .vp-anchor{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;transform:translateY(102%);visibility:hidden;pointer-events:none;z-index:-1}
