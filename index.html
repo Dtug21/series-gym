@@ -16,7 +16,7 @@
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script>/* Aplica el tema elegido antes de pintar, para que no parpadee */try{var t=JSON.parse(localStorage.getItem('sr1')||'{}').theme;if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<link rel="stylesheet" href="css/app.css?v=18">
+<link rel="stylesheet" href="css/app.css?v=19">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -48,6 +48,8 @@
 
 <!-- Igual que las pantallas completas cerradas de Piso Pélvico: fija, del alto de la pantalla, invisible y fuera de vista -->
 <div class="vp-anchor" aria-hidden="true"></div>
+<!-- Barra superior como Piso Pélvico: tapa la hora al deslizar y muestra el título en chico -->
+<div class="topbar" id="topbar" aria-hidden="true"><div id="topTitle"></div></div>
 <div class="app">
   <section class="screen" id="home"></section>
   <section class="screen" id="hist" hidden></section>
@@ -85,6 +87,6 @@
 <div class="snack" id="snack" role="status"><span></span><button data-a="snack"></button></div>
 <div class="sr" id="sr" aria-live="polite"></div>
 
-<script src="js/app.js?v=18"></script>
+<script src="js/app.js?v=19"></script>
 </body>
 </html>

@@ -584,6 +584,11 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had)snack('Hay una versión nueva de Series','Actualizar',()=>location.reload(),0)})}
 
+// Barra superior: aparece al deslizar con el título de la pantalla visible (como Piso Pélvico)
+function topbarSync(){const tb=$('#topbar');if(!tb)return;const scr=[...document.querySelectorAll('.app .screen')].find(x=>!x.hidden),h=scr&&scr.querySelector('.large h1');
+  $('#topTitle').textContent=h?h.textContent:'';tb.classList.toggle('on',window.scrollY>24)}
+addEventListener('scroll',topbarSync,{passive:true});new MutationObserver(()=>requestAnimationFrame(topbarSync)).observe($('.app'),{attributes:true,subtree:true,attributeFilter:['hidden']});topbarSync();
+
 // Acceso para test.html (la prueba automática); no cambia nada en la app
 window.T={get A(){return A},get db(){return db},get ed(){return ed},get qx(){return qx},save:()=>save()};
 

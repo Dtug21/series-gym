@@ -358,6 +358,12 @@ textarea.feel{width:100%;min-height:96px;border:0;border-radius:var(--r-m);backg
 .swr[aria-checked="true"] .sw{background:var(--accent)}
 .swr[aria-checked="true"] .sw::after{transform:translateX(20px)}
 
+/* ---------- Barra superior (igual a Piso Pélvico) ----------
+   Fija arriba con la zona de la hora; aparece al deslizar para que el contenido no quede bajo la hora y la batería. */
+.topbar{position:fixed;left:0;right:0;top:0;z-index:25;padding-top:env(safe-area-inset-top,0px);background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid transparent;opacity:0;pointer-events:none;transition:opacity .2s,border-color .2s}
+.topbar.on{opacity:1;border-bottom-color:var(--sep)}
+.topbar div{height:44px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:17px;color:var(--ink)}
+
 /* ---------- Barra de pestañas ---------- */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep);padding-bottom:env(safe-area-inset-bottom,0px)}
 .tabbar nav{max-width:640px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr}
