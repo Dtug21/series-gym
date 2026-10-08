@@ -546,7 +546,7 @@ function rCfg(){const c=db.cfg,d=c.def,th=db.theme||'auto',n=db.hist.length,p=db
 
   <div class="hdr">App</div>
   <div class="group"><button class="rowi" data-a="inst"><span class="rico">${ic('phone')}</span><div class="t"><b>Cómo instalarla</b><span>${ENV.standalone?'Ya está instalada en este teléfono ✓':'Agrégala a tu pantalla de inicio'}</span></div>${ic('chev','chev')}</button></div>
-  <p class="foot" id="diag" style="font-size:12px">${typeof diagTxt==='function'?diagTxt():''}</p>
+
 
   <div class="hdr">Tus datos</div>
   <div class="group">
@@ -587,21 +587,4 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){
 // Acceso para test.html (la prueba automática); no cambia nada en la app
 window.T={get A(){return A},get db(){return db},get ed(){return ed},get qx(){return qx},save:()=>save()};
 
-/* ---------- iPhone instalada: franja abajo ----------
-   Algunas versiones de iOS dejan el área de la app más corta que la pantalla (la barra de abajo queda
-   flotando sobre una franja). Se mide con un elemento fijo de 1 px pegado abajo y, si no llega al borde
-   real de la pantalla, se baja la barra esa distancia (variable CSS --gap). */
-let GAP={gap:0,screen:0,bottom:0,inner:0};
-function fixGap(){
-  const probe=document.createElement('div');probe.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:1px;pointer-events:none;visibility:hidden';
-  document.body.appendChild(probe);const bottom=Math.round(probe.getBoundingClientRect().bottom);probe.remove();
-  const portrait=window.innerHeight>=window.innerWidth,scr=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);
-  let gap=ENV.standalone?scr-bottom:0;if(!(gap>8&&gap<140))gap=0; // solo correcciones razonables y en la app instalada
-  GAP={gap,screen:scr,bottom,inner:window.innerHeight};
-  document.documentElement.style.setProperty('--gap',gap+'px');
-  const d=$('#diag');if(d)d.textContent=diagTxt()}
-const diagTxt=()=>`Pantalla ${GAP.screen} · área de la app ${GAP.bottom} · visible ${GAP.inner} · corrección ${GAP.gap} px · ${ENV.standalone?'instalada':'en navegador'}`;
-['resize','orientationchange','pageshow'].forEach(t=>addEventListener(t,()=>setTimeout(fixGap,120)));
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(fixGap,300)});
-document.addEventListener('focusout',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))setTimeout(fixGap,300)});
-fixGap();setTimeout(fixGap,600);
+
