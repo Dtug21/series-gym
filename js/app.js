@@ -167,7 +167,7 @@ function saveRec(a,ex2){const now=Date.now();
     if(r){r.dur=(r.dur||(r.end-r.d))+(now-a.t0);r.ex=r.ex.concat(ex2);r.end=now;r.loose=true;save();return {rec:r,merged:true}}}
   const rec={id:uid(),d:a.t0,end:now,dur:now-a.t0,name:a.s.name,ex:ex2,feel:null};if(a.s.loose)rec.loose=true;
   db.hist.unshift(rec);save();return {rec,merged:false}}
-function openPlayer(){A=db.act;A.kg=A.kg||A.s.ex.map(()=>[]);$('#player').hidden=false;$('#pRun').style.display='flex';$('#pEnd').hidden=true;document.body.classList.add('lock');wake(true);rP()}
+function openPlayer(){A=db.act;A.kg=A.kg||A.s.ex.map(()=>[]);$('#player').hidden=false;$('#pRun').style.display='';$('#pctl').style.display='';$('#pEnd').hidden=true;document.body.classList.add('lock');wake(true);rP()}
 function closePlayer(){cancelAnimationFrame(raf);A=null;$('#player').hidden=true;document.body.classList.remove('lock');wake(false)}
 function setPh(ph,extra){Object.assign(A,{ph,askOpen:false,kgx:false},extra||{});save();rP();
   const r=$('#pRun');r.classList.remove('swap');void r.offsetWidth;r.classList.add('swap'); // transición suave entre pasos
@@ -283,7 +283,7 @@ function finish(){
   const prog=progress(ex2); // se calcula antes de guardar, para comparar con lo anterior
   const {rec,merged}=saveRec(a,ex2);
   const n=ex2.reduce((s,e)=>s+e.sets.length,0),min=Math.max(1,Math.round((Date.now()-a.t0)/60000));
-  A=null;$('#pRun').style.display='none';$('#pTtl').textContent='';$('#pBack').style.visibility='hidden';
+  A=null;$('#pRun').style.display='none';$('#pctl').style.display='none';$('#pTtl').textContent='';$('#pBack').style.visibility='hidden';
   const pe=$('#pEnd');pe.hidden=false;pe.dataset.id=rec.id;
   pe.innerHTML=`<div class="big">${ic('check')}</div><h2>${merged?'¡Listo!':'¡Sesión completa!'}</h2><p>${ex2.length} ejercicio${ex2.length>1?'s':''} · ${n} series · ${min} min${merged?'<br>Se sumó a tu sesión libre de hoy':''}</p>
   ${prog.length?`<div class="prog">${prog.map(p=>`<div><b>${esc(p.n)}</b><span>${p.v}</span><em class="${p.c}">${p.t}</em></div>`).join('')}</div>`:''}
@@ -510,7 +510,7 @@ function installSheet(){
   else if(ENV.ios)body=`<p>Instálala para usarla a pantalla completa, sin la barra de Safari y con acceso desde un ícono.</p><ol class="isteps">
     ${step(1,`Toca ${chip('share','Compartir')} en la barra de Safari${ENV.iphone?', abajo al centro':', arriba a la derecha'}.`)}
     ${step(2,`Baja en la lista y toca ${chip('addsq','Agregar a pantalla de inicio')}.`)}
-    ${step(3,'Toca <b>Agregar</b>, arriba a la derecha.')}
+    ${step(3,'Deja activado <b>Abrir como app web</b> (así se abre a pantalla completa) y toca <b>Agregar</b>.')}
     ${step(4,'Abre <b>Series</b> desde el ícono nuevo en tu pantalla de inicio.')}</ol>
     <div class="inote"><b>Importante:</b> lo que registres aquí en Safari no pasa a la app instalada (el iPhone las guarda por separado). Instálala antes de empezar a entrenar.</div>`;
   else if(ENV.android)body=`<p>Instálala para usarla a pantalla completa y con acceso desde un ícono.</p><ol class="isteps">

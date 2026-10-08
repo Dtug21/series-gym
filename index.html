@@ -16,7 +16,7 @@
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script>/* Aplica el tema elegido antes de pintar, para que no parpadee */try{var t=JSON.parse(localStorage.getItem('sr1')||'{}').theme;if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<link rel="stylesheet" href="css/app.css?v=15">
+<link rel="stylesheet" href="css/app.css?v=16">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -60,9 +60,9 @@
   <button data-a="tab" data-v="cfg" aria-selected="false"><svg class="i"><use href="#i-gear"/></svg>Ajustes</button>
 </nav></div>
 
-<div class="player" id="player" hidden>
+<div class="player" id="player" role="dialog" aria-label="Entrenamiento" hidden>
   <div class="ptop"><button class="x back" id="pBack" data-a="stepBack" aria-label="Retroceder"><svg class="i"><use href="#i-back"/></svg>Atrás</button><div class="ttl" id="pTtl"></div><button class="x" data-a="quit" aria-label="Salir"><svg class="i"><use href="#i-x"/></svg></button></div>
-  <div id="pRun" style="display:flex;flex-direction:column">
+  <div id="pRun">
     <div class="pname" id="pName"></div>
     <div class="psub" id="pSub"></div>
     <div class="stage">
@@ -73,8 +73,8 @@
       </div>
     </div>
     <div class="plast" id="pLast"></div>
-    <div class="pctl" id="pctl"></div>
   </div>
+  <div class="pctl" id="pctl"></div>
   <div class="pend" id="pEnd" hidden></div>
 </div>
 
@@ -83,6 +83,6 @@
 <div class="snack" id="snack" role="status"><span></span><button data-a="snack"></button></div>
 <div class="sr" id="sr" aria-live="polite"></div>
 
-<script src="js/app.js?v=15"></script>
+<script src="js/app.js?v=16"></script>
 </body>
 </html>

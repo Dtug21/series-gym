@@ -10,7 +10,7 @@
   #res{display:grid;gap:4px;margin-bottom:12px}
   .ok{color:#2FD3C1} .bad{color:#FF6369;font-weight:700}
   #sum{font-size:18px;font-weight:700;margin:8px 0 12px}
-  iframe{width:375px;height:667px;border:1px solid #333;border-radius:12px;background:#000}
+  iframe{width:393px;height:759px;border:1px solid #333;border-radius:12px;background:#000}
 </style>
 </head>
 <body>
@@ -20,6 +20,7 @@
 <div id="res"></div>
 <iframe id="f" title="App en prueba"></iframe>
 <script>
+const QS=new URLSearchParams(location.search),FW=+(QS.get('w')||393),FH=+(QS.get('h')||759);
 const KEY='sr1',res=document.getElementById('res'),sum=document.getElementById('sum');
 let pass=0,fail=0;
 const log=(ok,msg)=>{const d=document.createElement('div');d.className=ok?'ok':'bad';d.textContent=(ok?'✓ ':'✗ ')+msg;res.appendChild(d);ok?pass++:fail++};
@@ -32,7 +33,7 @@ const backup=localStorage.getItem(KEY);sessionStorage.setItem(BK,backup===null?'
 
 function load(data){return new Promise(r=>{
   if(data===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,JSON.stringify(data));
-  const f=document.getElementById('f');f.onload=()=>setTimeout(r,300);f.src='index.html?test='+Date.now()})}
+  const f=document.getElementById('f');f.style.width=FW+'px';f.style.height=FH+'px';f.onload=()=>setTimeout(r,300);f.src='index.html?test='+Date.now()})}
 
 async function run(){
   const f=document.getElementById('f');
@@ -97,12 +98,23 @@ async function run(){
   // 13) Migración de datos viejos (sin versión ni duración)
   await load({tpl:[],hist:[{id:'a',d:1,end:60001,name:'Vieja',ex:[{n:'Curl',t:'r',goal:10,rest:60,sets:[10]}]}],extra:[10,15,30],act:null});
   w=f.contentWindow;const S2=()=>w.T;check(S2().db.v===2&&S2().db.hist[0].dur===60000,'Datos viejos se convierten al formato nuevo');
-  // 14) Pantalla baja (iPhone SE): el reproductor cabe sin desplazar
-  d=f.contentDocument;{const st=d.createElement('style');st.textContent='*{animation:none!important;transition:none!important}';d.head.appendChild(st)}w.startSession({name:'SE',ex:[{n:'Press banca',t:'r',sets:3,reps:8,dur:30,rest:60}]});await wait(80);
-  d.querySelector('[data-a="go"]').click();await wait(450);const p=d.querySelector('#player');
-  check(p.scrollHeight<=p.clientHeight+2,`En 375×667 la serie cabe sin desplazar (${p.scrollHeight}/${p.clientHeight})`);
-  d.querySelector('[data-a="quickOk"]').click();await wait(450);
-  check(p.scrollHeight<=p.clientHeight+2,`En 375×667 el descanso cabe sin desplazar (${p.scrollHeight}/${p.clientHeight})`);
+  // 14) Cada pantalla a FWxFH: botón principal de abajo visible y sin desplazamiento horizontal
+  d=f.contentDocument;{const st=d.createElement('style');st.textContent='*{animation:none!important;transition:none!important}';d.head.appendChild(st)}
+  const W=f.contentWindow,H=FH,noX=()=>d.documentElement.scrollWidth<=FW+1;
+  const vis=(sel,txt)=>{const e=d.querySelector(sel);const r=e&&e.getBoundingClientRect();check(r&&r.height>0&&r.bottom<=H+1&&r.top>=0,`${FW}×${FH} · ${txt} visible (${r?Math.round(r.bottom):'-'}/${H})`)};
+  for(const t of ['home','hist','cfg']){W.show(t);await wait(60);check(noX(),`${FW}×${FH} · ${t}: sin desplazamiento horizontal`)}
+  vis('.tabbar','barra de pestañas');
+  W.show('home');d.querySelector('[data-a="new"]').click();await wait(60);vis('.edbar .btn:not(.sec)','botón Empezar del editor');check(noX(),`${FW}×${FH} · editor: sin desplazamiento horizontal`);
+  W.T.ed&&(W.ed=null);W.show('home');
+  d.querySelector('[data-a="loose"]').click();await wait(60);const sh=d.querySelector('#sheet');
+  check(sh.getBoundingClientRect().top>=0,`${FW}×${FH} · hoja de ejercicio suelto cabe en la pantalla`);W.closeSheet();
+  W.startSession({name:'Tam',ex:[{n:'Press banca',t:'r',sets:3,reps:8,dur:30,rest:60}]});await wait(80);
+  vis('#pctl .pbig','"Estoy listo"');
+  d.querySelector('[data-a="go"]').click();await wait(80);vis('[data-a="quickOk"]','"Hice N reps"');
+  d.querySelector('[data-a="setDone"]').click();await wait(80);vis('.cb.main button','"Confirmar"');
+  d.querySelector('[data-a="rOk"]').click();await wait(80);vis('[data-a="restEnd"]','"Empezar ya" en el descanso');
+  const pr=d.querySelector('#pRun');check(pr.scrollHeight<=pr.clientHeight+2,`${FW}×${FH} · el centro del entrenamiento cabe sin desplazar (${pr.scrollHeight}/${pr.clientHeight})`);
+  check(noX(),`${FW}×${FH} · entrenamiento: sin desplazamiento horizontal`);
 }
 
 run().catch(e=>log(false,'La prueba se detuvo: '+e.message)).finally(()=>{
