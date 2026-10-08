@@ -49,18 +49,13 @@
 
 /* ---------- Base ---------- */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-/* El fondo (brillo turquesa arriba + grilla de puntos + grano) va en <html>: en el iPhone es la capa que
-   cubre TODA la pantalla, incluida la zona de la hora, la barra de inicio y el rebote al desplazar.
-   (Antes estaba en una capa fija sobre el body y podía dejar franjas lisas arriba o abajo.) */
-html{min-height:calc(100% + env(safe-area-inset-top,0px));background-color:var(--bg); /* iPhone instalada: sin esto queda una franja abajo del alto de la zona de la hora */
-  
-  background-image:radial-gradient(140% 420px at 50% -60px,var(--glow),transparent 70%),radial-gradient(var(--dot) 1px,transparent 1.3px),var(--grain);
-  background-size:100% 100%,18px 18px,160px 160px;background-repeat:no-repeat,repeat,repeat;
-  -webkit-text-size-adjust:100%;touch-action:manipulation;font-size:17px}
-/* Respeta el tamaño de texto del iPhone en los textos de lectura (rem) */
-@supports (font:-apple-system-body){html{font:-apple-system-body}}
-html,body{min-height:100%;max-width:100%;overflow-x:hidden;overflow-x:clip}
-body{margin:0;background:transparent;color:var(--ink);font:17px/1.4 var(--font);letter-spacing:-.01em;padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;overscroll-behavior-y:none}
+/* Base igual a Piso Pélvico (que en el iPhone instalado se ve a pantalla completa, sin franjas) */
+html,body{min-height:100%;max-width:100%;overflow-x:hidden}
+html{background:var(--bg);-webkit-text-size-adjust:100%;touch-action:manipulation;font-size:17px}
+body{margin:0;color:var(--ink);font:17px/1.4 var(--font);letter-spacing:-.01em;padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;overscroll-behavior-y:none;
+  /* Fondo: brillo turquesa arriba + grilla de puntos + grano */
+  background-color:var(--bg);background-image:radial-gradient(140% 420px at 50% -60px,var(--glow),transparent 70%),radial-gradient(var(--dot) 1px,transparent 1.3px),var(--grain);
+  background-size:100% 100%,18px 18px,160px 160px;background-repeat:no-repeat,repeat,repeat}
 body.lock{overflow:hidden}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-appearance:none;appearance:none;touch-action:manipulation;-webkit-touch-callout:none}
