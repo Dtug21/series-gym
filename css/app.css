@@ -62,7 +62,6 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:var(--r-m)}
 input,textarea{font:inherit;color:inherit;-webkit-user-select:text;user-select:text}
 svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
-.vh{position:fixed;inset:0;visibility:hidden;pointer-events:none;z-index:-2}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .app{max-width:640px;margin:0 auto}
 .stack>*+*{margin-top:12px}
@@ -257,7 +256,7 @@ svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .edbar-in .btn svg.i{width:20px;height:20px}
 
 /* ---------- Hojas inferiores ---------- */
-.sheet-bg{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;animation:fi .2s ease}
+.sheet-bg{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:70;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;animation:fi .2s ease}
 .sheet{width:100%;max-width:640px;max-height:88vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-radius:16px 16px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));animation:up .28s cubic-bezier(.2,.8,.2,1);
   background-color:var(--bg);background-image:radial-gradient(var(--dot) 1px,transparent 1.3px),var(--grain);background-size:18px 18px,160px 160px}
 .sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--sep);margin:0 auto 12px}
@@ -373,7 +372,7 @@ textarea.feel{width:100%;min-height:96px;border:0;border-radius:var(--r-m);backg
 .snack button{min-height:36px;padding:0 12px;border-radius:var(--r-s);background:rgba(47,211,193,.18);color:var(--teal);font-weight:700}
 
 /* ---------- Reproductor (siempre oscuro) ---------- */
-.player{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;color:var(--player-ink);
+.player{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:50;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;color:var(--player-ink);
   background-color:var(--player);background-image:var(--grain-w),radial-gradient(70% 45% at 50% 44%,rgba(47,211,193,.10),transparent 70%),repeating-radial-gradient(circle at 50% 44%,transparent 0 30px,rgba(255,255,255,.03) 30px 31px)}
 #pRun{flex:1 0 auto}
 #pRun.swap .stage,#pRun.swap .pctl,#pRun.swap .plast{animation:phin .28s cubic-bezier(.2,.8,.2,1)}
